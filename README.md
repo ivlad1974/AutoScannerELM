@@ -1,4 +1,4 @@
---- README.md (原始)
+--- README.md
 # AutoScannerELM 🚗🎙️🤖
 
 **Next-Generation OBD2 Car Diagnostic Scanner with AI Voice Control**
