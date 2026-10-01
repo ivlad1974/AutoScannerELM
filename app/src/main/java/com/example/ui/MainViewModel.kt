@@ -162,23 +162,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _aiReferencedLogs = MutableStateFlow<List<java.io.File>>(emptyList())
     val aiReferencedLogs: StateFlow<List<java.io.File>> = _aiReferencedLogs.asStateFlow()
 
-    // Configurable connection & ignition check intervals (seconds)
-    val disconnectedReconnectIntervalSec: StateFlow<Int> = elm327Manager.disconnectedReconnectIntervalSec
-    val ignitionOffPollIntervalSec: StateFlow<Int> = elm327Manager.ignitionOffPollIntervalSec
-    val ignitionOnCheckIntervalSec: StateFlow<Int> = elm327Manager.ignitionOnCheckIntervalSec
-
-    fun setDisconnectedReconnectIntervalSec(seconds: Int) {
-        elm327Manager.setDisconnectedReconnectIntervalSec(seconds)
-    }
-
-    fun setIgnitionOffPollIntervalSec(seconds: Int) {
-        elm327Manager.setIgnitionOffPollIntervalSec(seconds)
-    }
-
-    fun setIgnitionOnCheckIntervalSec(seconds: Int) {
-        elm327Manager.setIgnitionOnCheckIntervalSec(seconds)
-    }
-
     private val _appTheme = MutableStateFlow<com.example.ui.theme.AppThemeMode>(com.example.ui.theme.AppThemeMode.DARK_SPORT)
     val appTheme: StateFlow<com.example.ui.theme.AppThemeMode> = _appTheme.asStateFlow()
 
