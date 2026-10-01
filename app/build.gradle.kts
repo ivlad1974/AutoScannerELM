@@ -21,6 +21,26 @@ android {
     versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // GEMINI_API_KEY берётся из .env (Secrets Gradle Plugin). Если ключа нет,
+    // подставляем заглушку — иначе генерируется невалидный BuildConfig.java
+    // вида `public static final String GEMINI_API_KEY = ;` и сборка падает.
+    val geminiApiKey: String = run {
+      // 1) .env в модуле app (его читает Secrets-плагин), 2) .env в корне проекта,
+      // 3) локальные gradle-свойства, 4) переменная окружения.
+      val props = java.util.Properties()
+      val envFile = listOf(file(".env"), file(rootDir, ".env")).firstOrNull { it.exists() }
+      if (envFile != null) envFile.inputStream().use { props.load(it) }
+      props.getProperty("GEMINI_API_KEY")
+        ?: gradle.startParameter.projectProperties["GEMINI_API_KEY"]
+        ?: System.getenv("GEMINI_API_KEY")
+        ?: ""
+    }
+    // Экранируем кавычки/обратные слэши, чтобы значение всегда было валидной
+    // Java-строкой независимо от содержимого .env
+    val escaped = geminiApiKey.ifBlank { "MY_GEMINI_API_KEY" }
+      .replace("\\", "\\\\").replace("\"", "\\\"")
+    buildConfigField("String", "GEMINI_API_KEY", "\"$escaped\"")
   }
 
   signingConfigs {
