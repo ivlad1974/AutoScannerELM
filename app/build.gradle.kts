@@ -1,4 +1,6 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.io.File
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.android.application)
@@ -21,6 +23,24 @@ android {
     versionName = "1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // GEMINI_API_KEY берётся из app/.env (его читает Secrets-плагин). Если ключа
+    // нет или он пустой (`GEMINI_API_KEY=`), подставляем заглушку — иначе
+    // генерируется невалидный BuildConfig вида `String GEMINI_API_KEY = ;`.
+    // Файл .env читаем напрямую, чтобы контролировать значение поля.
+    val geminiApiKey: String = run {
+      val props = Properties()
+      val envFile = File(projectDir, ".env")
+      if (envFile.exists()) envFile.inputStream().use { props.load(it) }
+      props.getProperty("GEMINI_API_KEY")?.takeIf { it.isNotBlank() }
+        ?: providers.environmentVariable("GEMINI_API_KEY").orNull?.takeIf { it.isNotBlank() }
+        ?: ""
+    }
+    // Экранируем кавычки/обратные слэши, чтобы значение всегда было валидной
+    // Java-строкой независимо от содержимого .env
+    val escaped = geminiApiKey.ifBlank { "MY_GEMINI_API_KEY" }
+      .replace("\\", "\\\\").replace("\"", "\\\"")
+    buildConfigField("String", "GEMINI_API_KEY", "\"$escaped\"")
   }
 
   signingConfigs {
@@ -68,7 +88,7 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       // Release-подпись включается только если задан KEYSTORE_PATH (например, в CI).
       // Без него release собирается unsigned — это не мешает assembleDebug.
-      val releaseKeystore = System.getenv("KEYSTORE_PATH")?.let { file(it) }
+      val releaseKeystore = System.getenv("KEYSTORE_PATH")?.let { File(it) }
       if (releaseKeystore != null && releaseKeystore.exists()) {
         signingConfigs.create("release") {
           storeFile = releaseKeystore
