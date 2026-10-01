@@ -1,4 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -23,18 +24,16 @@ android {
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-    // GEMINI_API_KEY берётся из .env (Secrets Gradle Plugin). Если ключа нет,
-    // подставляем заглушку — иначе генерируется невалидный BuildConfig.java
-    // вида `public static final String GEMINI_API_KEY = ;` и сборка падает.
+    // GEMINI_API_KEY берётся из app/.env (его читает Secrets-плагин). Если ключа
+    // нет или он пустой (`GEMINI_API_KEY=`), подставляем заглушку — иначе
+    // генерируется невалидный BuildConfig вида `String GEMINI_API_KEY = ;`.
+    // Файл .env читаем напрямую, чтобы контролировать значение поля.
     val geminiApiKey: String = run {
-      // 1) .env в модуле app (его читает Secrets-плагин), 2) .env в корне проекта,
-      // 3) локальные gradle-свойства, 4) переменная окружения.
       val props = Properties()
-      val envFile = listOf(file(".env"), file(rootDir, ".env")).firstOrNull { it.exists() }
-      if (envFile != null) envFile.inputStream().use { props.load(it) }
-      props.getProperty("GEMINI_API_KEY")
-        ?: gradle.startParameter.projectProperties["GEMINI_API_KEY"]
-        ?: System.getenv("GEMINI_API_KEY")
+      val envFile = File(projectDir, ".env")
+      if (envFile.exists()) envFile.inputStream().use { props.load(it) }
+      props.getProperty("GEMINI_API_KEY")?.takeIf { it.isNotBlank() }
+        ?: providers.environmentVariable("GEMINI_API_KEY").orNull?.takeIf { it.isNotBlank() }
         ?: ""
     }
     // Экранируем кавычки/обратные слэши, чтобы значение всегда было валидной
@@ -89,7 +88,7 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       // Release-подпись включается только если задан KEYSTORE_PATH (например, в CI).
       // Без него release собирается unsigned — это не мешает assembleDebug.
-      val releaseKeystore = System.getenv("KEYSTORE_PATH")?.let { file(it) }
+      val releaseKeystore = System.getenv("KEYSTORE_PATH")?.let { File(it) }
       if (releaseKeystore != null && releaseKeystore.exists()) {
         signingConfigs.create("release") {
           storeFile = releaseKeystore
