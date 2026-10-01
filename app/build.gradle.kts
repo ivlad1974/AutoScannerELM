@@ -1,4 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.android.application)
@@ -28,7 +29,7 @@ android {
     val geminiApiKey: String = run {
       // 1) .env в модуле app (его читает Secrets-плагин), 2) .env в корне проекта,
       // 3) локальные gradle-свойства, 4) переменная окружения.
-      val props = java.util.Properties()
+      val props = Properties()
       val envFile = listOf(file(".env"), file(rootDir, ".env")).firstOrNull { it.exists() }
       if (envFile != null) envFile.inputStream().use { props.load(it) }
       props.getProperty("GEMINI_API_KEY")
