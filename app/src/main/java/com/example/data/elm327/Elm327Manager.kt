@@ -72,34 +72,15 @@ class Elm327Manager(private val context: Context) {
     private val _selectedFuelStrategyId = MutableStateFlow(prefs.getString("saved_fuel_strategy_id", "STD_012F") ?: "STD_012F")
     val selectedFuelStrategyId: StateFlow<String> = _selectedFuelStrategyId.asStateFlow()
 
-    // Configurable polling & reconnect intervals (seconds)
-    private val _disconnectedReconnectIntervalSec = MutableStateFlow(prefs.getInt("reconnect_interval_disconnected_sec", 3))
+    // Fixed polling & reconnect intervals (seconds) — defaults, not user-configurable
+    private val _disconnectedReconnectIntervalSec = MutableStateFlow(5)
     val disconnectedReconnectIntervalSec: StateFlow<Int> = _disconnectedReconnectIntervalSec.asStateFlow()
 
-    private val _ignitionOffPollIntervalSec = MutableStateFlow(prefs.getInt("poll_interval_ignition_off_sec", 3))
+    private val _ignitionOffPollIntervalSec = MutableStateFlow(10)
     val ignitionOffPollIntervalSec: StateFlow<Int> = _ignitionOffPollIntervalSec.asStateFlow()
 
-    private val _ignitionOnCheckIntervalSec = MutableStateFlow(prefs.getInt("check_interval_ignition_on_sec", 5))
+    private val _ignitionOnCheckIntervalSec = MutableStateFlow(5)
     val ignitionOnCheckIntervalSec: StateFlow<Int> = _ignitionOnCheckIntervalSec.asStateFlow()
-
-    fun setDisconnectedReconnectIntervalSec(seconds: Int) {
-        val safe = seconds.coerceIn(1, 60)
-        _disconnectedReconnectIntervalSec.value = safe
-        prefs.edit().putInt("reconnect_interval_disconnected_sec", safe).apply()
-        startAutoReconnectJob()
-    }
-
-    fun setIgnitionOffPollIntervalSec(seconds: Int) {
-        val safe = seconds.coerceIn(1, 60)
-        _ignitionOffPollIntervalSec.value = safe
-        prefs.edit().putInt("poll_interval_ignition_off_sec", safe).apply()
-    }
-
-    fun setIgnitionOnCheckIntervalSec(seconds: Int) {
-        val safe = seconds.coerceIn(1, 60)
-        _ignitionOnCheckIntervalSec.value = safe
-        prefs.edit().putInt("check_interval_ignition_on_sec", safe).apply()
-    }
 
     private val ioMutex = Mutex()
     @Volatile
